@@ -15,18 +15,24 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.Notebook"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.Notebook"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-
+    },
+    "extra": {
+      "eas": {
+        "projectId": "67ed5b6a-0b21-46f1-bb7a-baa4a94ecbe4"
+      }
     }
   }
 }

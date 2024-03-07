@@ -18,12 +18,20 @@ export default function DetailScreen({ route, navigation }) {
 
   const saveEditedNote = async () => {
     try {
-      await updateDoc(doc(database, "Notebook", noteId), { text: noteText });
-      navigation.goBack();
+        await updateDoc(doc(database, "Notebook", noteId), { text: noteText });
+        if (imagePath) {
+            const res = await fetch(imagePath);
+            const blob = await res.blob();
+            const storageRef = ref(storage, `/${noteId}.jpg`); 
+            await uploadBytes(storageRef, blob);
+            console.log("Image uploaded...");
+        }
+        navigation.goBack();
     } catch (error) {
-      console.error("Error updating document:", error);
+        console.error("Error updating document:", error);
     }
-  };
+};
+
   async function hentBillede() {
     let resultat = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true
@@ -59,6 +67,21 @@ export default function DetailScreen({ route, navigation }) {
       alert("fejl i image download " + error)
     })
   }
+  async function launchCamera() {
+    const result =  await ImagePicker.requestCameraPermissionsAsync()
+    if(result.granted===false){
+    console.log("adgang ikke tilladt");
+    } else{
+        ImagePicker.launchCameraAsync({
+          quality:1
+        })
+        .then((response)=>{
+            console.log("billede ankommet" + response);
+            setImagePath(response.assets[0].uri)
+        })
+    }
+ }
+
 
   const deleteNote = async () => {
     try {
@@ -84,6 +107,7 @@ export default function DetailScreen({ route, navigation }) {
         <Text>No Image Selected</Text>
       )}
       <Button title='hent billede' onPress={hentBillede} />
+      <Button title='Tag et billede' onPress={launchCamera}/>
       <Button title='Upload billede' onPress={uploadBillede} />
       <Button title='Download billede' onPress={downloadBillede} />
       <Button title="Gem" onPress={saveEditedNote} />
