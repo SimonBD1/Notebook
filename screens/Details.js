@@ -2,9 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Image } from 'react-native';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { database, storage } from '../firebase';
-import {ref, uploadBytes, getDownloadURL} from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  runOnJS,
+} from 'react-native-reanimated';
 
 
 export default function DetailScreen({ route, navigation }) {
@@ -92,27 +99,56 @@ export default function DetailScreen({ route, navigation }) {
     }
   };
 
+  const translateX = useSharedValue(0);
+  const onGestureEvent = (event) => {
+    translateX.value = event.nativeEvent.translationX;
+  };
+
+  const onPanStateChange = ({ nativeEvent }) => {
+    if (nativeEvent.state === State.END) {
+      if (Math.abs(nativeEvent.translationX) > 150) {
+        setImagePath(null);
+      }
+      translateX.value = withSpring(0);
+    }
+  };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }],
+    };
+  });
+
   return (
-    <View style={styles.container}>
-      <Text>Full Note:</Text>
-      <TextInput
-        style={styles.noteInput}
-        multiline={true}
-        onChangeText={setNoteText}
-        value={noteText}
-      />
-       {imagePath ? (
-        <Image source={{ uri: imagePath }} style={{ width: 150, height: 150 }} />
-      ) : (
-        <Text>No Image Selected</Text>
-      )}
-      <Button title='hent billede' onPress={hentBillede} />
-      <Button title='Tag et billede' onPress={launchCamera}/>
-      <Button title='Upload billede' onPress={uploadBillede} />
-      <Button title='Download billede' onPress={downloadBillede} />
-      <Button title="Gem" onPress={saveEditedNote} />
-      <Button title="Slet" onPress={deleteNote} />
-    </View>
+    <GestureHandlerRootView style={styles.container}>
+      <View style={styles.container}>
+        <Text>Full Note:</Text>
+        <TextInput
+          style={styles.noteInput}
+          multiline={true}
+          onChangeText={setNoteText}
+          value={noteText}
+        />
+        {imagePath ? (
+          <PanGestureHandler
+            onGestureEvent={onGestureEvent}
+            onHandlerStateChange={onPanStateChange}
+          >
+            <Animated.View style={[styles.imageContainer, animatedStyle]}>
+              <Image source={{ uri: imagePath }} style={styles.image} />
+            </Animated.View>
+          </PanGestureHandler>
+        ) : (
+          <Text>No Image Selected</Text>
+        )}
+        <Button title='hent billede' onPress={hentBillede} />
+        <Button title='Tag et billede' onPress={launchCamera} />
+        <Button title='Upload billede' onPress={uploadBillede} />
+        <Button title='Download billede' onPress={downloadBillede} />
+        <Button title='Gem' onPress={saveEditedNote} />
+        <Button title='Slet' onPress={deleteNote} />
+      </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -125,13 +161,22 @@ const styles = StyleSheet.create({
   },
   noteInput: {
     height: 200,
-    width: '90%', 
+    width: '90%',
     borderColor: 'gray',
     borderWidth: 1,
     marginTop: 10,
     marginBottom: 10,
     padding: 10,
-    textAlignVertical: 'top', 
-    
+    textAlignVertical: 'top',
+  },
+  imageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: 150,
+  },
+  image: {
+    width: 100,
+    height: 100,
   },
 });
